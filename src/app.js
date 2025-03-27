@@ -5,6 +5,10 @@ const app = express();
 
 // 1. 启动时记录信息
 const T0 = Date.now();
+const localTime = new Date(T0).toLocaleString('zh-CN', {
+    timeZone: 'Asia/Shanghai',
+    hour12: false
+});
 let MAC = '';
 
 function getHostMAC() {
@@ -79,7 +83,7 @@ app.use(express.urlencoded({ extended: true }));
 // 信息接口
 app.get('/info', (req, res) => {
     res.set('Content-Type', 'text/plain');
-    res.send(`启动时间: ${new Date(T0).toISOString()}\nMAC: ${MAC}`);
+    res.send(`启动时间: ${localTime}\nMAC: ${MAC}`);
 });
 
 // 3. 可视化界面
@@ -96,6 +100,13 @@ app.get('/', (req, res) => {
             </style>
         </head>
         <body>
+            <div class="container">
+                <h2>系统信息</h2>
+                <div id="info">
+                    <p>启动时间: <span id="startTime">${localTime}</span></p>
+                    <p>宿主机MAC: <span id="macAddress">${MAC}</span></p>
+                </div>
+            </div>
             <div class="container">
                 <h2>设置触发时间（精确到秒）</h2>
                 <form id="timeForm">
@@ -158,6 +169,6 @@ app.post('/trigger', (req, res) => {
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
     console.log(`服务已启动，端口：${PORT}`);
-    console.log(`启动时间：${new Date(T0).toISOString()}`);
+    console.log(`启动时间：${localTime}`);
     console.log(`宿主机MAC：${MAC}`);
 });
