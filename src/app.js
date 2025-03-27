@@ -146,24 +146,62 @@ app.get('/', (req, res) => {
 
 // 4. 时间检测端点
 app.post('/trigger', (req, res) => {
-// 获取秒级时间戳
-    const triggerSeconds = parseInt(req.body.timestamp);
-    const currentSeconds = Math.floor(Date.now() / 1000);
+    // 获取秒级时间戳
+    const receivedTimestamp = parseInt(req.body.timestamp);
+    const currentUTCSeconds = Math.floor(Date.now() / 1000);
 
-    // 验证有效性
-    if (isNaN(triggerSeconds) || triggerSeconds < currentSeconds) {
-        return res.status(400).send('时间戳必须为未来时间');
+    // 时间验证
+    if (isNaN(receivedTimestamp) || receivedTimestamp <= currentUTCSeconds) {
+        return res.status(400).json({
+            error: 'Invalid timestamp',
+            current_utc: currentUTCSeconds,
+            server_time: new Date().toISOString()
+        });
     }
 
-    // 智能调度检测
-    const delay = triggerSeconds - currentSeconds;
-    if (delay == 0) {
-        console.log(`时间戳匹配，触发重启: 触发时间 ${new Date(triggerSeconds * 1000).toISOString()}`);
-        process.exit(1);
-    } else {
-        return res.status(200).json({ currentSeconds, triggerSeconds, delay });
-    }
+    // 记录UTC时间日志
+    console.log(`[${new Date().toISOString()}] 设置触发时间：`, {
+        received_timestamp: receivedTimestamp,
+        utc_time: new Date(receivedTimestamp * 1000).toISOString()
+    });
+
+    // 启动检测逻辑
+    scheduleUTCCheck(receivedTimestamp);
 });
+
+function scheduleUTCCheck(targetSeconds) {
+    const currentUTC = Math.floor(Date.now() / 1000);
+    const timeDiff = targetSeconds - currentUTC;
+
+    // 动态调度策略
+    if (timeDiff > 600) { // 10分钟以上
+        setTimeout(() => {
+            startPrecisionCheck(targetSeconds);
+        }, (timeDiff - 300) * 1000); // 提前5分钟启动精准检测
+    } else if (timeDiff > 5) { // 5秒以上
+        setTimeout(() => {
+            startPrecisionCheck(targetSeconds);
+        }, (timeDiff - 2) * 1000); // 提前2秒
+    } else {
+        startPrecisionCheck(targetSeconds);
+    }
+}
+
+function startPrecisionCheck(targetSeconds) {
+    const checkInterval = setInterval(() => {
+        const currentUTC = Math.floor(Date.now() / 1000);
+        
+        if (currentUTC === targetSeconds) {
+            console.log(`[${new Date().toISOString()}] UTC时间匹配，触发重启`);
+            process.exit(1);
+        }
+
+        // 超时保护（+2秒窗口）
+        if (currentUTC > targetSeconds + 2) {
+            clearInterval(checkInterval);
+        }
+    }, 100); // 100ms检测间隔
+}
 
 // 启动服务
 const PORT = process.env.PORT || 3000;

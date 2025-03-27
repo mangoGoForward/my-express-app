@@ -4,7 +4,7 @@ This project is a simple Express application built with Node.js. It serves as a 
 
 ## Project Structure
 
-```
+```plaintext
 my-express-app
 ├── src
 │   ├── app.js               # Entry point of the application
@@ -23,7 +23,7 @@ my-express-app
 
 To install the dependencies, run:
 
-```
+```shell
 npm install
 ```
 
@@ -31,7 +31,7 @@ npm install
 
 To start the application, use the following command:
 
-```
+```shell
 node src/app.js
 ```
 
