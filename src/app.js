@@ -12,6 +12,9 @@ const localTime = new Date(T0).toLocaleString('zh-CN', {
 let MAC = '';
 
 function getHostMAC() {
+    if (process.env.INTERFACE) {
+        return readMAC(process.env.INTERFACE)
+    }
     const netPath = '/sys/class/net';
     const interfaces = fs.readdirSync(netPath);
 
@@ -81,7 +84,7 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 // 信息接口
-app.get('/info', (req, res) => {
+app.get('/GetMac', (req, res) => {
     res.set('Content-Type', 'text/plain');
     res.send(`启动时间: ${localTime}\nMAC: ${MAC}`);
 });
